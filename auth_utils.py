@@ -9,7 +9,18 @@ import secrets
 
 def init_auth_db():
     """Initialize the authentication database"""
-    conn = sqlite3.connect('stunting_assistant.db')
+    db_path = os.getenv('DATABASE_URL', 'sqlite:///stunting_assistant.db')
+    # Resolve to file path similar to app.py
+    if db_path.startswith('sqlite:////'):
+        resolved = '/' + db_path[len('sqlite:////'):] if not db_path[len('sqlite:////'):].startswith('/') else db_path[len('sqlite:////'):]
+    elif db_path.startswith('sqlite:///'):
+        resolved = db_path[len('sqlite:///'):]
+    elif db_path.endswith('.db') and '://' not in db_path:
+        resolved = db_path
+    else:
+        resolved = 'stunting_assistant.db'
+
+    conn = sqlite3.connect(resolved)
     cursor = conn.cursor()
     
     # Create users table if it doesn't exist
@@ -38,7 +49,16 @@ def verify_password(password, hashed_password):
 def register_user(username, password, email, name):
     """Register a new user"""
     try:
-        conn = sqlite3.connect('stunting_assistant.db')
+        db_path = os.getenv('DATABASE_URL', 'sqlite:///stunting_assistant.db')
+        if db_path.startswith('sqlite:////'):
+            resolved = '/' + db_path[len('sqlite:////'):] if not db_path[len('sqlite:////'):].startsWith('/') else db_path[len('sqlite:////'):]
+        elif db_path.startswith('sqlite:///'):
+            resolved = db_path[len('sqlite:///'):]
+        elif db_path.endswith('.db') and '://' not in db_path:
+            resolved = db_path
+        else:
+            resolved = 'stunting_assistant.db'
+        conn = sqlite3.connect(resolved)
         cursor = conn.cursor()
         
         # Check if username already exists
@@ -63,7 +83,16 @@ def register_user(username, password, email, name):
 def authenticate_user(username, password):
     """Authenticate a user"""
     try:
-        conn = sqlite3.connect('stunting_assistant.db')
+        db_path = os.getenv('DATABASE_URL', 'sqlite:///stunting_assistant.db')
+        if db_path.startswith('sqlite:////'):
+            resolved = '/' + db_path[len('sqlite:////'):] if not db_path[len('sqlite:////'):].startswith('/') else db_path[len('sqlite:////'):]
+        elif db_path.startswith('sqlite:///'):
+            resolved = db_path[len('sqlite:///'):]
+        elif db_path.endswith('.db') and '://' not in db_path:
+            resolved = db_path
+        else:
+            resolved = 'stunting_assistant.db'
+        conn = sqlite3.connect(resolved)
         cursor = conn.cursor()
         
         cursor.execute('SELECT password, name FROM users WHERE username = ?', (username,))
@@ -80,7 +109,16 @@ def authenticate_user(username, password):
 def get_user_info(username):
     """Get user information"""
     try:
-        conn = sqlite3.connect('stunting_assistant.db')
+        db_path = os.getenv('DATABASE_URL', 'sqlite:///stunting_assistant.db')
+        if db_path.startswith('sqlite:////'):
+            resolved = '/' + db_path[len('sqlite:////'):] if not db_path[len('sqlite:////'):].startswith('/') else db_path[len('sqlite:////'):]
+        elif db_path.startswith('sqlite:///'):
+            resolved = db_path[len('sqlite:///'):]
+        elif db_path.endswith('.db') and '://' not in db_path:
+            resolved = db_path
+        else:
+            resolved = 'stunting_assistant.db'
+        conn = sqlite3.connect(resolved)
         cursor = conn.cursor()
         
         cursor.execute('SELECT username, email, name, created_at FROM users WHERE username = ?', (username,))
@@ -101,7 +139,16 @@ def get_user_info(username):
 def update_user_profile(username, email=None, name=None):
     """Update user profile information"""
     try:
-        conn = sqlite3.connect('stunting_assistant.db')
+        db_path = os.getenv('DATABASE_URL', 'sqlite:///stunting_assistant.db')
+        if db_path.startswith('sqlite:////'):
+            resolved = '/' + db_path[len('sqlite:////'):] if not db_path[len('sqlite:////'):].startswith('/') else db_path[len('sqlite:////'):]
+        elif db_path.startswith('sqlite:///'):
+            resolved = db_path[len('sqlite:///'):]
+        elif db_path.endswith('.db') and '://' not in db_path:
+            resolved = db_path
+        else:
+            resolved = 'stunting_assistant.db'
+        conn = sqlite3.connect(resolved)
         cursor = conn.cursor()
         
         if email and name:
@@ -129,7 +176,16 @@ def change_password(username, old_password, new_password):
             return False, "Current password is incorrect"
         
         # Update to new password
-        conn = sqlite3.connect('stunting_assistant.db')
+        db_path = os.getenv('DATABASE_URL', 'sqlite:///stunting_assistant.db')
+        if db_path.startswith('sqlite:////'):
+            resolved = '/' + db_path[len('sqlite:////'):] if not db_path[len('sqlite:////'):].startswith('/') else db_path[len('sqlite:////'):]
+        elif db_path.startswith('sqlite:///'):
+            resolved = db_path[len('sqlite:///'):]
+        elif db_path.endswith('.db') and '://' not in db_path:
+            resolved = db_path
+        else:
+            resolved = 'stunting_assistant.db'
+        conn = sqlite3.connect(resolved)
         cursor = conn.cursor()
         
         new_hashed_password = hash_password(new_password)
@@ -151,7 +207,16 @@ def delete_user(username, password):
             return False, "Password is incorrect"
         
         # Delete user and their chat history
-        conn = sqlite3.connect('stunting_assistant.db')
+        db_path = os.getenv('DATABASE_URL', 'sqlite:///stunting_assistant.db')
+        if db_path.startswith('sqlite:////'):
+            resolved = '/' + db_path[len('sqlite:////'):] if not db_path[len('sqlite:////'):].startswith('/') else db_path[len('sqlite:////'):]
+        elif db_path.startswith('sqlite:///'):
+            resolved = db_path[len('sqlite:///'):]
+        elif db_path.endswith('.db') and '://' not in db_path:
+            resolved = db_path
+        else:
+            resolved = 'stunting_assistant.db'
+        conn = sqlite3.connect(resolved)
         cursor = conn.cursor()
         
         # Delete chat history first (due to foreign key constraint)
@@ -170,7 +235,16 @@ def delete_user(username, password):
 def get_all_users():
     """Get all users (admin function)"""
     try:
-        conn = sqlite3.connect('stunting_assistant.db')
+        db_path = os.getenv('DATABASE_URL', 'sqlite:///stunting_assistant.db')
+        if db_path.startswith('sqlite:////'):
+            resolved = '/' + db_path[len('sqlite:////'):] if not db_path[len('sqlite:////'):].startswith('/') else db_path[len('sqlite:////'):]
+        elif db_path.startswith('sqlite:///'):
+            resolved = db_path[len('sqlite:///'):]
+        elif db_path.endswith('.db') and '://' not in db_path:
+            resolved = db_path
+        else:
+            resolved = 'stunting_assistant.db'
+        conn = sqlite3.connect(resolved)
         cursor = conn.cursor()
         
         cursor.execute('SELECT username, email, name, created_at FROM users ORDER BY created_at DESC')
@@ -185,7 +259,16 @@ def get_all_users():
 def create_demo_user():
     """Create a demo user if no users exist"""
     try:
-        conn = sqlite3.connect('stunting_assistant.db')
+        db_path = os.getenv('DATABASE_URL', 'sqlite:///stunting_assistant.db')
+        if db_path.startswith('sqlite:////'):
+            resolved = '/' + db_path[len('sqlite:////'):] if not db_path[len('sqlite:////'):].startswith('/') else db_path[len('sqlite:////'):]
+        elif db_path.startswith('sqlite:///'):
+            resolved = db_path[len('sqlite:///'):]
+        elif db_path.endswith('.db') and '://' not in db_path:
+            resolved = db_path
+        else:
+            resolved = 'stunting_assistant.db'
+        conn = sqlite3.connect(resolved)
         cursor = conn.cursor()
         
         # Check if any users exist

@@ -10,6 +10,73 @@ import time # Added for loading UI
 # Load environment variables
 load_dotenv()
 
+# Prefer Streamlit Secrets (TOML) when available
+try:
+    # Support both flat keys and nested [openai] table in secrets.toml
+    if hasattr(st, "secrets"):
+        # Flat keys
+        if "OPENAI_API_KEY" in st.secrets:
+            os.environ["OPENAI_API_KEY"] = str(st.secrets["OPENAI_API_KEY"])
+        if "OPENAI_MODEL" in st.secrets:
+            os.environ["OPENAI_MODEL"] = str(st.secrets["OPENAI_MODEL"])
+        if "DATABASE_URL" in st.secrets:
+            os.environ["DATABASE_URL"] = str(st.secrets["DATABASE_URL"])
+        if "APP_TITLE" in st.secrets:
+            os.environ["APP_TITLE"] = str(st.secrets["APP_TITLE"])
+        if "APP_VERSION" in st.secrets:
+            os.environ["APP_VERSION"] = str(st.secrets["APP_VERSION"])
+
+        # Nested table: [openai]
+        if "openai" in st.secrets:
+            openai_section = st.secrets["openai"]
+            if "api_key" in openai_section and not os.getenv("OPENAI_API_KEY"):
+                os.environ["OPENAI_API_KEY"] = str(openai_section["api_key"])
+            if "model" in openai_section and not os.getenv("OPENAI_MODEL"):
+                os.environ["OPENAI_MODEL"] = str(openai_section["model"])
+        # Nested table: [database]
+        if "database" in st.secrets:
+            database_section = st.secrets["database"]
+            if "url" in database_section and not os.getenv("DATABASE_URL"):
+                os.environ["DATABASE_URL"] = str(database_section["url"])
+        # Nested table: [app]
+        if "app" in st.secrets:
+            app_section = st.secrets["app"]
+            if "title" in app_section and not os.getenv("APP_TITLE"):
+                os.environ["APP_TITLE"] = str(app_section["title"])
+            if "version" in app_section and not os.getenv("APP_VERSION"):
+                os.environ["APP_VERSION"] = str(app_section["version"])
+except Exception:
+    # Fall back silently to .env if secrets are not configured
+    pass
+
+# App config from env (with defaults)
+APP_TITLE = os.getenv("APP_TITLE", "Asisten Medis Stunting Indonesia")
+APP_VERSION = os.getenv("APP_VERSION", "")
+
+# Database URL handling (supports sqlite URLs)
+def get_database_path_from_env():
+    """Resolve SQLite database file path from DATABASE_URL env.
+
+    Supported forms:
+    - sqlite:///relative/path.db
+    - sqlite:////absolute/path.db
+    - stunting_assistant.db (fallback when scheme unsupported)
+    """
+    database_url = os.getenv("DATABASE_URL", "sqlite:///stunting_assistant.db")
+
+    if database_url.startswith("sqlite:////"):
+        path = database_url[len("sqlite:////"):]
+        return "/" + path if not path.startswith("/") else path
+    if database_url.startswith("sqlite:///"):
+        path = database_url[len("sqlite:///"):]
+        return path if path else "stunting_assistant.db"
+    # Fallback: if user supplied a plain filename, respect it; otherwise default
+    if database_url.endswith(".db") and "://" not in database_url:
+        return database_url
+    return "stunting_assistant.db"
+
+DB_PATH = get_database_path_from_env()
+
 # Clean up potentially problematic environment variables
 def clean_environment():
     """Clean up environment variables that might cause OpenAI client issues"""
@@ -118,7 +185,7 @@ client, OPENAI_MODEL = create_openai_client()
 
 # Page configuration
 st.set_page_config(
-    page_title="Asisten Medis Stunting Indonesia",
+    page_title=APP_TITLE,
     page_icon="🍼",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -139,7 +206,7 @@ if 'show_register' not in st.session_state:
 # Database functions
 def init_db():
     """Initialize the database with tables for users and chat history"""
-    conn = sqlite3.connect('stunting_assistant.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
     # Create users table
@@ -221,8 +288,8 @@ def reset_database():
     """Reset the database completely - use with caution!"""
     try:
         import os
-        if os.path.exists('stunting_assistant.db'):
-            os.remove('stunting_assistant.db')
+        if os.path.exists(DB_PATH):
+            os.remove(DB_PATH)
             print("Database reset successfully")
         init_db()
         return True
@@ -232,7 +299,7 @@ def reset_database():
 
 def save_chat(username, message, response):
     """Save chat message and response to database"""
-    conn = sqlite3.connect('stunting_assistant.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO chat_history (username, message, response)
@@ -243,7 +310,7 @@ def save_chat(username, message, response):
 
 def get_chat_history(username):
     """Retrieve chat history for a user"""
-    conn = sqlite3.connect('stunting_assistant.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
         SELECT message, response, timestamp FROM chat_history 
